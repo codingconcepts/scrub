@@ -1,7 +1,7 @@
 /*
-	// TODO: bang err creation into if blocks
-	// TODO: process directories
+	// TODO: split code into different files and tidy up
 	// TODO: progress indication
+	// TODO: test with a file system mocker
 */
 
 package main
@@ -13,11 +13,13 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 type options struct {
-	sweeps int
-	files  []string
+	sweeps   int
+	noDelete bool
+	files    []string
 }
 
 func main() {
@@ -29,41 +31,95 @@ func main() {
 
 func processFiles(opts *options) (err error) {
 	for _, file := range opts.files {
-		// overwrite the file with random data
-		for i := 0; i < opts.sweeps; i++ {
-			if err = overwrite(file); err != nil {
-				return err
-			}
+		var info os.FileInfo
+		if info, err = os.Stat(file); err != nil {
+			return
 		}
 
-		// delete the file
-		if err = os.Remove(file); err != nil {
-			return err
+		// TODO: i don't like how nested this is
+		if info.IsDir() {
+			if err = processDirectory(opts, file); err != nil {
+				return
+			}
+		} else {
+			if err = processFile(opts, file); err != nil {
+				return
+			}
 		}
 	}
 
 	return
 }
 
-func overwrite(filePath string) (err error) {
-	writer, err := createWriter(filePath)
-	if err != nil {
+func processDirectory(opts *options, directory string) (err error) {
+	var paths []string
+	if paths, err = getFilesRecursively(directory); err != nil {
 		return
 	}
 
-	stats, err := os.Stat(filePath)
-	if err != nil {
+	// process all of the files
+	for _, path := range paths {
+		if err = processFile(opts, path); err != nil {
+			return
+		}
+	}
+
+	// delete the directory if required
+	if opts.noDelete {
+		return
+	}
+
+	return os.RemoveAll(directory)
+}
+
+func processFile(opts *options, file string) (err error) {
+	// overwrite the file with random data
+	for i := 0; i < opts.sweeps; i++ {
+		if err := overwrite(file); err != nil {
+			return err
+		}
+	}
+
+	// delete the file if requested by the user
+	if opts.noDelete {
+		return
+	}
+
+	return os.Remove(file)
+}
+
+func getFilesRecursively(directory string) (files []string, err error) {
+	files = []string{}
+
+	err = filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			files = append(files, path)
+		}
+		return nil
+	})
+
+	return
+}
+
+func overwrite(file string) (err error) {
+	var writer *bufio.Writer
+	if writer, err = createWriter(file); err != nil {
+		return
+	}
+
+	var info os.FileInfo
+	if info, err = os.Stat(file); err != nil {
 		return
 	}
 
 	// using a limited reader so we don't generate unlimited data
-	limitReader := io.LimitReader(rand.Reader, stats.Size())
+	limitReader := io.LimitReader(rand.Reader, info.Size())
 	return pipe(limitReader, writer)
 }
 
-func createWriter(filePath string) (writer *bufio.Writer, err error) {
-	outputFile, err := os.OpenFile(filePath, os.O_WRONLY, os.ModePerm)
-	if err != nil {
+func createWriter(file string) (writer *bufio.Writer, err error) {
+	var outputFile *os.File
+	if outputFile, err = os.OpenFile(file, os.O_WRONLY, os.ModePerm); err != nil {
 		return nil, err
 	}
 
@@ -71,8 +127,7 @@ func createWriter(filePath string) (writer *bufio.Writer, err error) {
 }
 
 func pipe(reader io.Reader, writer *bufio.Writer) (err error) {
-	_, err = writer.ReadFrom(reader)
-	if err != nil {
+	if _, err = writer.ReadFrom(reader); err != nil {
 		return
 	}
 
@@ -88,6 +143,7 @@ func parse() (opts *options) {
 	opts = new(options)
 
 	flag.IntVar(&opts.sweeps, "s", 10, "the number of overwrite sweeps")
+	flag.BoolVar(&opts.noDelete, "nd", false, "set flag to prevent files/directories being deleted")
 	flag.Parse()
 
 	opts.files = flag.Args()

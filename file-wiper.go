@@ -17,9 +17,11 @@ import (
 )
 
 type options struct {
-	sweeps   int
-	noDelete bool
-	files    []string
+	sweeps           int
+	debug            bool
+	files            []string
+	processFile      func(file string) (err error)
+	processDirectory func(directory string) (err error)
 }
 
 func main() {
@@ -65,11 +67,7 @@ func processDirectory(opts *options, directory string) (err error) {
 	}
 
 	// delete the directory if required
-	if opts.noDelete {
-		return
-	}
-
-	return os.RemoveAll(directory)
+	return opts.processDirectory(directory)
 }
 
 func processFile(opts *options, file string) (err error) {
@@ -81,11 +79,7 @@ func processFile(opts *options, file string) (err error) {
 	}
 
 	// delete the file if requested by the user
-	if opts.noDelete {
-		return
-	}
-
-	return os.Remove(file)
+	return opts.processFile(file)
 }
 
 func getFilesRecursively(directory string) (files []string, err error) {
@@ -143,9 +137,31 @@ func parse() (opts *options) {
 	opts = new(options)
 
 	flag.IntVar(&opts.sweeps, "s", 10, "the number of overwrite sweeps")
-	flag.BoolVar(&opts.noDelete, "nd", false, "set flag to prevent files/directories being deleted")
+	flag.BoolVar(&opts.debug, "d", false, "set flag to print files/directories, not delete them")
 	flag.Parse()
+
+	// if debug has been requested, swap in the print functionality
+	if opts.debug {
+		opts.processFile = debugFunc
+		opts.processDirectory = debugFunc
+	} else {
+		opts.processFile = deleteFileFunc
+		opts.processDirectory = deleteDirectoryFunc
+	}
 
 	opts.files = flag.Args()
 	return
+}
+
+func deleteFileFunc(file string) (err error) {
+	return os.Remove(file)
+}
+
+func deleteDirectoryFunc(directory string) (err error) {
+	return os.RemoveAll(directory)
+}
+
+func debugFunc(path string) (err error) {
+	fmt.Println(path)
+	return nil
 }

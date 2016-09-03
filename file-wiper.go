@@ -1,7 +1,3 @@
-/*
-	// TODO: test with a file system mocker
-*/
-
 package main
 
 import (

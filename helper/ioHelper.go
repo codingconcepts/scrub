@@ -6,13 +6,14 @@ import (
 	"os"
 
 	"github.com/bassrob/file-wiper/model"
+	"github.com/spf13/afero"
 )
 
 // CreateWriter creates a *bufio writer from a given file info pointer,
 // opening the file with WRONLY permissions, ready for writing to
-func CreateWriter(file *model.File) (writer *bufio.Writer, err error) {
-	var outputFile *os.File
-	if outputFile, err = os.OpenFile(file.FullPath, os.O_WRONLY, os.ModePerm); err != nil {
+func CreateWriter(fs afero.Fs, file *model.File) (writer *bufio.Writer, err error) {
+	var outputFile afero.File
+	if outputFile, err = fs.OpenFile(file.FullPath, os.O_WRONLY, os.ModePerm); err != nil {
 		return nil, err
 	}
 

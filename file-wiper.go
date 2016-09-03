@@ -10,16 +10,21 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/bassrob/file-wiper/helper"
 	"github.com/bassrob/file-wiper/model"
+	"github.com/spf13/afero"
+)
+
+var (
+	FileSystem afero.Fs
 )
 
 func main() {
 	opts := parse()
+	FileSystem = afero.NewOsFs()
 
 	if err := process(opts); err != nil {
 		fmt.Printf("An error occurred: %s", err)
@@ -30,12 +35,12 @@ func main() {
 
 func process(opts *model.Options) (err error) {
 	var files []*model.File
-	if files, err = helper.GetAllFiles(opts.Files); err != nil {
+	if files, err = helper.GetAllFiles(FileSystem, opts.Files); err != nil {
 		return
 	}
 
 	var directories []*model.File
-	if directories, err = helper.GetTopLevelDirectories(opts.Files); err != nil {
+	if directories, err = helper.GetTopLevelDirectories(FileSystem, opts.Files); err != nil {
 		return
 	}
 
@@ -84,7 +89,7 @@ func processFile(opts *model.Options, file *model.File) (err error) {
 
 func overwrite(file *model.File) (err error) {
 	var writer *bufio.Writer
-	if writer, err = helper.CreateWriter(file); err != nil {
+	if writer, err = helper.CreateWriter(FileSystem, file); err != nil {
 		return
 	}
 
@@ -119,14 +124,13 @@ func parse() (opts *model.Options) {
 }
 
 func deleteFileFunc(file *model.File) (err error) {
-	return os.Remove(file.FullPath)
+	return FileSystem.Remove(file.FullPath)
 }
 
 func deleteDirectoryFunc(file *model.File) (err error) {
-	return os.RemoveAll(file.FullPath)
+	return FileSystem.RemoveAll(file.FullPath)
 }
 
 func debugFunc(file *model.File) (err error) {
-	//fmt.Println(file.FullPath)
 	return nil
 }

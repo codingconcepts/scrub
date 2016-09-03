@@ -1,6 +1,4 @@
 /*
-	// TODO: split code into different files and tidy up
-	// TODO: progress indication
 	// TODO: test with a file system mocker
 */
 
@@ -13,155 +11,122 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-)
 
-type options struct {
-	sweeps           int
-	debug            bool
-	files            []string
-	processFile      func(file string) (err error)
-	processDirectory func(directory string) (err error)
-}
+	pb "gopkg.in/cheggaaa/pb.v1"
+
+	"github.com/bassrob/file-wiper/helper"
+	"github.com/bassrob/file-wiper/model"
+)
 
 func main() {
 	opts := parse()
-	processFiles(opts)
 
-	printAndHold("Done")
+	if err := process(opts); err != nil {
+		fmt.Printf("An error occurred: %s", err)
+	}
+
+	printAndHold("Finished, press any key to quit")
 }
 
-func processFiles(opts *options) (err error) {
-	for _, file := range opts.files {
-		var info os.FileInfo
-		if info, err = os.Stat(file); err != nil {
-			return
-		}
+func process(opts *model.Options) (err error) {
+	var files []*model.File
+	if files, err = helper.GetAllFiles(opts.Files); err != nil {
+		return
+	}
 
-		// TODO: i don't like how nested this is
-		if info.IsDir() {
-			if err = processDirectory(opts, file); err != nil {
-				return
-			}
-		} else {
-			if err = processFile(opts, file); err != nil {
-				return
-			}
+	var directories []*model.File
+	if directories, err = helper.GetTopLevelDirectories(opts.Files); err != nil {
+		return
+	}
+
+	totalSize := model.TotalSize(files)
+	progressBar := createProgressBar(totalSize)
+
+	// loop through all of the nested files and process them
+	progressBar.Start()
+	for _, file := range files {
+		if err := processFile(opts, file); err != nil {
+			panic(err)
+		}
+		progressBar.Add64(file.Size)
+	}
+	progressBar.Finish()
+
+	// now that all of the nested files have been cleaned up,
+	// remove the top-level directories
+	for _, file := range directories {
+		if err := opts.ProcessDirectory(file); err != nil {
+			panic(err)
 		}
 	}
 
 	return
 }
 
-func processDirectory(opts *options, directory string) (err error) {
-	var paths []string
-	if paths, err = getFilesRecursively(directory); err != nil {
-		return
-	}
+func createProgressBar(totalSize int64) (bar *pb.ProgressBar) {
+	bar = pb.New64(totalSize)
+	bar.SetUnits(pb.U_BYTES)
 
-	// process all of the files
-	for _, path := range paths {
-		if err = processFile(opts, path); err != nil {
-			return
-		}
-	}
-
-	// delete the directory if required
-	return opts.processDirectory(directory)
+	return
 }
 
-func processFile(opts *options, file string) (err error) {
+func processFile(opts *model.Options, file *model.File) (err error) {
 	// overwrite the file with random data
-	for i := 0; i < opts.sweeps; i++ {
+	for i := 0; i < opts.Sweeps; i++ {
 		if err := overwrite(file); err != nil {
 			return err
 		}
 	}
 
 	// delete the file if requested by the user
-	return opts.processFile(file)
+	return opts.ProcessFile(file)
 }
 
-func getFilesRecursively(directory string) (files []string, err error) {
-	files = []string{}
-
-	err = filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
-			files = append(files, path)
-		}
-		return nil
-	})
-
-	return
-}
-
-func overwrite(file string) (err error) {
+func overwrite(file *model.File) (err error) {
 	var writer *bufio.Writer
-	if writer, err = createWriter(file); err != nil {
-		return
-	}
-
-	var info os.FileInfo
-	if info, err = os.Stat(file); err != nil {
+	if writer, err = helper.CreateWriter(file); err != nil {
 		return
 	}
 
 	// using a limited reader so we don't generate unlimited data
-	limitReader := io.LimitReader(rand.Reader, info.Size())
-	return pipe(limitReader, writer)
-}
-
-func createWriter(file string) (writer *bufio.Writer, err error) {
-	var outputFile *os.File
-	if outputFile, err = os.OpenFile(file, os.O_WRONLY, os.ModePerm); err != nil {
-		return nil, err
-	}
-
-	return bufio.NewWriter(outputFile), nil
-}
-
-func pipe(reader io.Reader, writer *bufio.Writer) (err error) {
-	if _, err = writer.ReadFrom(reader); err != nil {
-		return
-	}
-
-	return writer.Flush()
+	limitReader := io.LimitReader(rand.Reader, file.Size)
+	return helper.Pipe(limitReader, writer)
 }
 
 func printAndHold(msg string) {
 	fmt.Println(msg)
-	fmt.Scan()
+	fmt.Scanln()
 }
 
-func parse() (opts *options) {
-	opts = new(options)
+func parse() (opts *model.Options) {
+	opts = new(model.Options)
 
-	flag.IntVar(&opts.sweeps, "s", 10, "the number of overwrite sweeps")
-	flag.BoolVar(&opts.debug, "d", false, "set flag to print files/directories, not delete them")
+	flag.IntVar(&opts.Sweeps, "s", 10, "the number of overwrite sweeps")
+	flag.BoolVar(&opts.Debug, "d", false, "set flag to print files/directories, not delete them")
 	flag.Parse()
 
 	// if debug has been requested, swap in the print functionality
-	if opts.debug {
-		opts.processFile = debugFunc
-		opts.processDirectory = debugFunc
+	if opts.Debug {
+		opts.ProcessFile = debugFunc
+		opts.ProcessDirectory = debugFunc
 	} else {
-		opts.processFile = deleteFileFunc
-		opts.processDirectory = deleteDirectoryFunc
+		opts.ProcessFile = deleteFileFunc
+		opts.ProcessDirectory = deleteDirectoryFunc
 	}
 
-	opts.files = flag.Args()
+	opts.Files = flag.Args()
 	return
 }
 
-func deleteFileFunc(file string) (err error) {
-	return os.Remove(file)
+func deleteFileFunc(file *model.File) (err error) {
+	return os.Remove(file.FullPath)
 }
 
-func deleteDirectoryFunc(directory string) (err error) {
-	return os.RemoveAll(directory)
+func deleteDirectoryFunc(file *model.File) (err error) {
+	return os.RemoveAll(file.FullPath)
 }
 
-func debugFunc(path string) (err error) {
-	fmt.Println(path)
+func debugFunc(file *model.File) (err error) {
+	//fmt.Println(file.FullPath)
 	return nil
 }

@@ -1,6 +1,7 @@
 /*
 	TODO: move the FileSystem somewhere else so i dont have to inject it everywhere
 	TODO: make options creation a bit less shit
+	TODO: add a method to the FileSystem to print tree (easier to compare)
 */
 package main
 
@@ -16,19 +17,20 @@ import (
 )
 
 var (
-	FileSystem  afero.Fs
-	ProgressBar *pb.ProgressBar
-	Options     *model.Options
+	FileSystem afero.Fs
+	Options    *model.Options
 )
 
 func main() {
 	Options = parse()
 	FileSystem = afero.NewOsFs()
 
+	// overwrite every file with pseudo random data
 	if err := processFiles(); err != nil {
 		fmt.Printf("An error occurred processing files: %s", err)
 	}
 
+	// delete the top-level directories containing the files (if any)
 	if err := processDirectories(); err != nil {
 		fmt.Printf("An error occurred processing directories: %s", err)
 	}
@@ -43,17 +45,16 @@ func processFiles() (err error) {
 	}
 
 	totalSize := model.TotalSize(files)
-	ProgressBar = createProgressBar(totalSize)
+	progressBar := createProgressBar(totalSize)
 
-	// loop through all of the nested files and process them
-	ProgressBar.Start()
+	progressBar.Start()
 	for _, file := range files {
 		if err = helper.ProcessFile(FileSystem, Options, file); err != nil {
 			panic(err)
 		}
-		ProgressBar.Add64(file.Size)
+		progressBar.Add64(file.Size)
 	}
-	ProgressBar.Finish()
+	progressBar.Finish()
 
 	return
 }
@@ -64,8 +65,6 @@ func processDirectories() (err error) {
 		return
 	}
 
-	// now that all of the nested files have been cleaned up,
-	// remove the top-level directories
 	for _, file := range directories {
 		if err := Options.ProcessDirectory(file); err != nil {
 			panic(err)

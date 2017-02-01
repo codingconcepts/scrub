@@ -14,6 +14,8 @@ type Options struct {
 	ProcessDirectory func(file *File) (err error)
 }
 
+// NewOptions spins up a pointer to an Options struct
+// with some overridable parameters
 func NewOptions(fs afero.Fs, sweeps int, debug bool) (opts *Options) {
 	opts = new(Options)
 	opts.Sweeps = sweeps

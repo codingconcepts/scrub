@@ -1,0 +1,3 @@
+TODO: move the FileSystem somewhere else so i dont have to inject it everywhere
+TODO: make options creation a bit less shit
+TODO: add a method to the FileSystem to print tree (easier to compare)

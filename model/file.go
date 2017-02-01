@@ -22,6 +22,8 @@ func (file *File) String() string {
 	return fmt.Sprintf("%s (%v): %d", file.FullPath, file.IsDir, file.Size)
 }
 
+// GetFile finds a particular *File in a slice of
+// Files and returns it
 func (files Files) GetFile(fullPath string) (file *File) {
 	for _, f := range files {
 		if strings.EqualFold(f.FullPath, fullPath) {

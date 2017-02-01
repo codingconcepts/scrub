@@ -1,13 +1,9 @@
-/*
-	TODO: move the FileSystem somewhere else so i dont have to inject it everywhere
-	TODO: make options creation a bit less shit
-	TODO: add a method to the FileSystem to print tree (easier to compare)
-*/
 package main
 
 import (
 	"flag"
 	"fmt"
+	"log"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
@@ -17,8 +13,13 @@ import (
 )
 
 var (
+	// FileSystem allows for the mocking and easier
+	// testing of the underlying file system
 	FileSystem afero.Fs
-	Options    *model.Options
+
+	// Options allows the basic processing behaviour
+	// to be overriden
+	Options *model.Options
 )
 
 func main() {
@@ -50,7 +51,7 @@ func processFiles() (err error) {
 	progressBar.Start()
 	for _, file := range files {
 		if err = helper.ProcessFile(FileSystem, Options, file); err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		progressBar.Add64(file.Size)
 	}
@@ -67,7 +68,7 @@ func processDirectories() (err error) {
 
 	for _, file := range directories {
 		if err := Options.ProcessDirectory(file); err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}
 

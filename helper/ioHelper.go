@@ -15,8 +15,8 @@ import (
 func ProcessFile(fs afero.Fs, opts *model.Options, file *model.File) (err error) {
 	// overwrite the file with random data
 	for i := 0; i < opts.Sweeps; i++ {
-		if err := Overwrite(fs, file); err != nil {
-			return err
+		if err = Overwrite(fs, file); err != nil {
+			return
 		}
 	}
 
@@ -24,7 +24,9 @@ func ProcessFile(fs afero.Fs, opts *model.Options, file *model.File) (err error)
 	return opts.ProcessFile(file)
 }
 
-// Overwrites a given file with random data
+// Overwrite, writes random data into a target file
+// such that any magnetic shadow left by a file is
+// corrupted and harder to retreive
 func Overwrite(fs afero.Fs, file *model.File) (err error) {
 	var writer *bufio.Writer
 	if writer, err = CreateWriter(fs, file); err != nil {

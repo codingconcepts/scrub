@@ -1,2 +1,2 @@
 # file-wiper
-A simple CLI to completely wipe a file from existence
+A simple CLI to securely wipe a file from existence

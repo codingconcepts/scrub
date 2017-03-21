@@ -24,7 +24,7 @@ func ProcessFile(fs afero.Fs, opts *model.Options, file *model.File) (err error)
 	return opts.ProcessFile(file)
 }
 
-// Overwrite, writes random data into a target file
+// Overwrite writes random data into a target file
 // such that any magnetic shadow left by a file is
 // corrupted and harder to retreive
 func Overwrite(fs afero.Fs, file *model.File) (err error) {

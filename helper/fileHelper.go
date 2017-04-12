@@ -3,7 +3,7 @@ package helper
 import (
 	"os"
 
-	"github.com/bassrob/file-wiper/model"
+	"github.com/codingconcepts/file-wiper/model"
 	"github.com/spf13/afero"
 )
 

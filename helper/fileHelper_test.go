@@ -1,6 +1,9 @@
 package helper
 
-import "testing"
+import (
+	"path/filepath"
+	"testing"
+)
 
 func TestGetAllFiles(t *testing.T) {
 	fs := setup()
@@ -12,10 +15,10 @@ func TestGetAllFiles(t *testing.T) {
 
 	assertFile(t, files[0], "oa.txt", 18)
 	assertFile(t, files[1], "ob.txt", 18)
-	assertFile(t, files[2], "outer_a/ia.txt", 26)
-	assertFile(t, files[3], "outer_a/inner_a/iia.txt", 35)
-	assertFile(t, files[4], "outer_b/ib.txt", 26)
-	assertFile(t, files[5], "outer_b/inner_b/iib.txt", 35)
+	assertFile(t, files[2], filepath.Join("outer_a", "ia.txt"), 26)
+	assertFile(t, files[3], filepath.Join("outer_a", "inner_a", "iia.txt"), 35)
+	assertFile(t, files[4], filepath.Join("outer_b", "ib.txt"), 26)
+	assertFile(t, files[5], filepath.Join("outer_b", "inner_b", "iib.txt"), 35)
 }
 
 func TestGetTopLevelDirectories(t *testing.T) {

@@ -1,21 +1,22 @@
 package helper
 
 import (
+	"path/filepath"
 	"testing"
 
-	"github.com/bassrob/file-wiper/model"
+	"github.com/codingconcepts/file-wiper/model"
 	"github.com/spf13/afero"
 )
 
 var (
 	golden = map[string]string{
-		"oa.txt":                  "contents of oa.txt",
-		"outer_a/ia.txt":          "contents of outer_a/ia.txt",
-		"outer_a/inner_a/iia.txt": "contents of outer_a/inner_a/iia.txt",
+		"oa.txt": "contents of oa.txt",
+		filepath.Join("outer_a", "ia.txt"):             filepath.Join("contents of outer_a", "ia.txt"),
+		filepath.Join("outer_a", "inner_a", "iia.txt"): filepath.Join("contents of outer_a", "inner_a", "iia.txt"),
 
-		"ob.txt":                  "contents of ob.txt",
-		"outer_b/ib.txt":          "contents of outer_b/ib.txt",
-		"outer_b/inner_b/iib.txt": "contents of outer_b/inner_b/iib.txt",
+		"ob.txt": "contents of ob.txt",
+		filepath.Join("outer_b", "ib.txt"):             filepath.Join("contents of outer_b", "ib.txt"),
+		filepath.Join("outer_b", "inner_b", "iib.txt"): filepath.Join("contents of outer_b", "inner_b", "iib.txt"),
 	}
 )
 

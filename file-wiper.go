@@ -7,8 +7,8 @@ import (
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
-	"github.com/bassrob/file-wiper/helper"
-	"github.com/bassrob/file-wiper/model"
+	"github.com/codingconcepts/file-wiper/helper"
+	"github.com/codingconcepts/file-wiper/model"
 	"github.com/spf13/afero"
 )
 

@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bassrob/file-wiper/model"
+	"github.com/codingconcepts/file-wiper/model"
 	"github.com/spf13/afero"
 )
 

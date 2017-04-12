@@ -1,0 +1,36 @@
+{
+	"ImportPath": "github.com/codingconcepts/file-wiper",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/mattn/go-runewidth",
+			"Comment": "v0.0.2-1-g14207d2",
+			"Rev": "14207d285c6c197daabb5c9793d63e7af9ab2d50"
+		},
+		{
+			"ImportPath": "github.com/spf13/afero",
+			"Rev": "9be650865eab0c12963d8753212f4f9c66cdcf12"
+		},
+		{
+			"ImportPath": "github.com/spf13/afero/mem",
+			"Rev": "9be650865eab0c12963d8753212f4f9c66cdcf12"
+		},
+		{
+			"ImportPath": "golang.org/x/text/transform",
+			"Rev": "f4b4367115ec2de254587813edaa901bc1c723a8"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/norm",
+			"Rev": "f4b4367115ec2de254587813edaa901bc1c723a8"
+		},
+		{
+			"ImportPath": "gopkg.in/cheggaaa/pb.v1",
+			"Comment": "v1.0.13",
+			"Rev": "b6229822fa186496fcbf34111237e7a9693c6971"
+		}
+	]
+}

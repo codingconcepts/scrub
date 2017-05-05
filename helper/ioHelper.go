@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/codingconcepts/file-wiper/model"
+	"github.com/codingconcepts/scrub/model"
 	"github.com/spf13/afero"
 )
 

@@ -18,5 +18,5 @@ $ go get -u github.com/codingconcepts/scrub
 The following example will securly delete `fileOne.txt`, `fileTwo.txt` and all files in `dirOne` and `dirTwo`:
 
 ``` bash
-$ sweep fileOne.txt fileTwo.txt dirOne dirTwo
+$ scrub fileOne.txt fileTwo.txt dirOne dirTwo
 ```
